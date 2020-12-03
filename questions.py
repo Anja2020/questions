@@ -2,7 +2,7 @@ import nltk
 import sys
 import string
 import os
-import numpy as np
+import math
 
 FILE_MATCHES = 1
 SENTENCE_MATCHES = 1
@@ -55,7 +55,7 @@ def load_files(directory):
     for file in os.listdir(directory):
         if file.endswith('.txt'):
             path = os.path.join(directory, file)
-            with open(path) as f:
+            with open(path, encoding='utf-8') as f:
                 files[file] = f.read()
     return files
 
@@ -87,19 +87,19 @@ def compute_idfs(documents):
     resulting dictionary.
     """
     idfs = dict()
-    words = set()
+    words = dict()
     num_docs = len(documents)
 
-    for doc, content in documents:
-        for word in content:
-            words.add(word)
+    for doc in documents:
+        for word in set(documents[doc]):
+            if word in words.keys():
+                words[word] += 1
+            else:
+                words[word] = 1
 
     for word in words:
-        appearing_docs = 0
-        for doc in documents:
-            if word in doc:
-                appearing_docs += 1
-        idfs[word] = np.log(num_docs / appearing_docs)
+        idf = math.log(num_docs / words[word])
+        idfs[word] = idf
             
     return idfs
 
@@ -116,10 +116,11 @@ def top_files(query, files, idfs, n):
 
     for word in query:
         for file in files:
+            ranking[file] = 0
             num_appearing = files[file].count(word)
-            ranking[file] += num_appearing / idfs[word]
+          #  print(f"word {word} has an idf of {idfs[word]}")
+            ranking[file] += num_appearing * idfs[word]
     filenames = sorted(ranking, key=ranking.get, reverse=True)[:n]
-
     return filenames
 
 
@@ -130,11 +131,6 @@ def top_sentences(query, sentences, idfs, n):
     to their IDF values), return a list of the `n` top sentences that match
     the query, ranked according to idf. If there are ties, preference should
     be given to sentences that have a higher query term density.
-
-    “matching word measure”: namely, the sum of IDF values for any word in the query that also appears in the sentence. 
-    Note that term frequency should not be taken into account here, only inverse document frequency.
-
-    mwm = sum of IDF for word in query and sentence 
     """
     top_sentences = list()
     ranking = dict()
@@ -145,11 +141,12 @@ def top_sentences(query, sentences, idfs, n):
             if word in sentences[sentence]:
                 mwm += idfs[word]
         ranking[sentence] = mwm
-    top_sentences = sorted(x.items(), key=lambda x:x[1], reverse=True)
+    top_sentences = sorted(ranking.items(), key=lambda x:x[1], reverse=True)
 
     for sentence1 in top_sentences:
         for sentence2 in top_sentences:
             if sentence1[0] != sentence2[0] and sentence1[1] == sentence2[1]:
+               
                 query_words1 = 0
                 query_words2 = 0
                 for word in query:
@@ -160,12 +157,13 @@ def top_sentences(query, sentences, idfs, n):
         
                 qtd1 = query_words1 / len(sentences[sentence1[0]])
                 qtd2 = query_words2 / len(sentences[sentence2[0]]) 
-
-                if qtd2 > qtd1:
+                if qtd2 > qtd1 and top_sentences.index(sentence1) < top_sentences.index(sentence2):
+                    a, b = top_sentences.index(sentence2), top_sentences.index(sentence1)
+                    top_sentences[b], top_sentences[a] = top_sentences[a], top_sentences[b]
+                elif qtd1 > qtd2 and top_sentences.index(sentence1) > top_sentences.index(sentence2):
                     a, b = top_sentences.index(sentence1), top_sentences.index(sentence2)
-                    i[b], i[a] = i[a], i[b]
-    top_sentences = top_sentences[:n]
-
+                    top_sentences[b], top_sentences[a] = top_sentences[a], top_sentences[b]
+    top_sentences = [s[0] for s in top_sentences][:n]
     return top_sentences
 
 if __name__ == "__main__":
