@@ -114,11 +114,10 @@ def top_files(query, files, idfs, n):
     filenames = list()
     ranking = dict()
 
-    for word in query:
-        for file in files:
-            ranking[file] = 0
+    for file in files:
+        ranking[file] = 0
+        for word in query:
             num_appearing = files[file].count(word)
-          #  print(f"word {word} has an idf of {idfs[word]}")
             ranking[file] += num_appearing * idfs[word]
     filenames = sorted(ranking, key=ranking.get, reverse=True)[:n]
     return filenames
@@ -152,7 +151,7 @@ def top_sentences(query, sentences, idfs, n):
                 for word in query:
                     if word in sentence1[0]:
                         query_words1 += 1
-                    elif word in sentence2[0]:
+                    if word in sentence2[0]:
                         query_words2 += 1
         
                 qtd1 = query_words1 / len(sentences[sentence1[0]])
