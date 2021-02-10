@@ -88,21 +88,18 @@ def compute_idfs(documents):
     Any word that appears in at least one of the documents should be in the
     resulting dictionary.
     """
+    wordCounter = dict()
     idfs = dict()
-    words = dict()
-    num_docs = len(documents)
-
-    for doc in documents:
-        for word in set(documents[doc]):
-            if word in words.keys():
-                words[word] += 1
-            else:
-                words[word] = 1
-
-    for word in words:
-        idf = math.log(num_docs / words[word])
-        idfs[word] = idf
+    for words in documents.values():
+        for word in set(words):
+            if word not in wordCounter:
+                wordCounter[word] = 0
             
+            wordCounter[word] = wordCounter[word] + 1
+
+    for word, count in wordCounter.items():
+        idfs[word] = math.log(len(documents) / count)
+
     return idfs
 
 
