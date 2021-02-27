@@ -71,12 +71,12 @@ def tokenize(document):
     words = []
     tokens = [word.lower() for word in nltk.word_tokenize(document)]
     stopwords = nltk.corpus.stopwords.words("english")
+    puncts = [punct for punct in string.punctuation]
     for word in tokens:
-        if word in string.punctuation or word in stopwords:
+        if word in puncts or word in stopwords:
             continue
         else:
             words.append(word)
-    words.sort()
     return words
 
 
@@ -148,13 +148,13 @@ def top_sentences(query, sentences, idfs, n):
                 query_words1 = 0
                 query_words2 = 0
                 for word in query:
-                    if word in sentence1[0]:
+                    if word.lower() in sentence1[0].lower():
                         query_words1 += 1
-                    if word in sentence2[0]:
+                    if word.lower() in sentence2[0].lower():
                         query_words2 += 1
         
-                qtd1 = query_words1 / len(sentences[sentence1[0]])
-                qtd2 = query_words2 / len(sentences[sentence2[0]]) 
+                qtd1 = query_words1 / len(sentence1[0].split())
+                qtd2 = query_words2 / len(sentence2[0].split()) 
                 if qtd2 > qtd1 and top_sentences.index(sentence1) < top_sentences.index(sentence2):
                     a, b = top_sentences.index(sentence2), top_sentences.index(sentence1)
                     top_sentences[b], top_sentences[a] = top_sentences[a], top_sentences[b]
